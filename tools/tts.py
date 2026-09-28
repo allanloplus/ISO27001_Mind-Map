@@ -21,7 +21,7 @@ SR = 24000
 EDGE = {"A": dict(voice="zh-TW-YunJheNeural", rate="+6%", pitch="+3Hz"),
         "R": dict(voice="zh-TW-HsiaoYuNeural", rate="+14%", pitch="+40Hz")}
 KOKORO = {"A": dict(sid=68, speed=1.08), "R": dict(sid=39, speed=1.15)}
-LEAD, GAP, TAIL, FIRST_LEAD, MIN_SCENE = 0.5, 0.3, 0.6, 1.0, 5.0
+LEAD, GAP, TAIL, FIRST_LEAD, MIN_SCENE = 0.5, 0.3, 0.8, 1.0, 8.0
 DIGITS = "零一二三四五六七八九"
 SAY = [(r"ISO 2700(\d)", lambda m: "ISO 二七零零" + DIGITS[int(m[1])]),
        (r"A\.(\d)", lambda m: "A " + DIGITS[int(m[1])]),
@@ -41,11 +41,15 @@ def decode(mp3: bytes):
 
 
 def edge_engine():
-    import edge_tts
+    import os, ssl, edge_tts, edge_tts.communicate
+    ca = os.environ.get("TTS_CA_BUNDLE")  # 經由需自訂憑證的代理伺服器連線時設定
+    proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+    if ca:
+        edge_tts.communicate._SSL_CTX = ssl.create_default_context(cafile=ca)
 
     async def run(text, o):
         buf = bytearray()
-        async for c in edge_tts.Communicate(text, o["voice"], rate=o["rate"], pitch=o["pitch"]).stream():
+        async for c in edge_tts.Communicate(text, o["voice"], rate=o["rate"], pitch=o["pitch"], proxy=proxy).stream():
             if c["type"] == "audio":
                 buf += c["data"]
         return bytes(buf)

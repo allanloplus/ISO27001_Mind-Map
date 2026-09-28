@@ -2,7 +2,7 @@
 
 講師：**羅宇倫 Allan Lo**（ISMS／PIMS 輔導顧問・驗證稽核員）
 
-以〈ISO27001:2022（Allan Lo，2023/10/20 更新）〉心智圖為主軸製作的 5 分鐘動畫簡報。畫面沿著心智圖移動、逐層展開，右側卡片補充講師簡報的內容。Allan 顧問全程串場講解，助教阿拉蕾在重點處跳出來點綴。
+以〈ISO27001:2022（Allan Lo，2023/10/20 更新）〉心智圖為主軸製作的 5 分鐘動畫簡報。畫面沿著心智圖移動、逐層展開，右側卡片補充講師簡報的內容。Allan 老師全程串場講解，助教阿拉蕾在重點處跳出來點綴。
 
 - **本文 0–10 章**：PSDCA 架構，逐章展開 4–10 章條文與要求重點
 - **附錄 A**：4 個主題、93 項控制（A.5 組織 37、A.6 人員 8、A.7 實體 14、A.8 技術 34）與其分類
@@ -17,7 +17,7 @@
 | `ISO27001_mindmap.mp4` | 完整影片（1600×900，含雙人旁白），可直接播放或插入 PowerPoint |
 | `index.html` | 互動版，用瀏覽器開啟後按「開始播放（有聲）」；需與 `assets/` 放在同一層 |
 | `docs/分鏡表.md` | 每段的時間、段落與兩位角色的台詞 |
-| `narration/lines.json` | 台詞原稿（`A` = Allan 顧問，`R` = 阿拉蕾） |
+| `narration/lines.json` | 台詞原稿（`A` = Allan 老師，`R` = 阿拉蕾） |
 | `assets/` | 角色頭像、旁白音檔 |
 | `src/`、`tools/` | 簡報範本、控制措施對照表，以及建置與語音合成工具 |
 
@@ -30,15 +30,15 @@
 
 ## 修改台詞與重新產生
 
-語音使用離線 AI 語音合成（sherpa-onnx + Kokoro v1.1-zh）。Allan 顧問為男聲 `sid=68`，阿拉蕾為女聲 `sid=39`，可在 `tools/tts.py` 調整音色與語速。
+旁白使用 Microsoft Edge 神經語音（台灣國語）：Allan 老師為 `zh-TW-YunJheNeural`，阿拉蕾為 `zh-TW-HsiaoYuNeural`（音調調高、語速加快）。可在 `tools/tts.py` 的 `EDGE` 調整語速與音高。
 
 ```bash
-pip install sherpa-onnx soundfile opencc-python-reimplemented imageio-ffmpeg
-# 下載並解壓語音模型：
-# https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_1.tar.bz2
-python tools/tts.py --model-dir kokoro-multi-lang-v1_1   # 產生 assets/narration.mp3、narration/timing.json
-python tools/build.py                                    # 重建 index.html（段落長度會跟著旁白調整）
+pip install edge-tts soundfile imageio-ffmpeg numpy
+python tools/tts.py      # 產生 assets/narration.mp3、narration/timing.json（需連線 speech.platform.bing.com）
+python tools/build.py    # 重建 index.html，段落長度會跟著旁白調整
 ```
+
+無法連線時，可改用離線語音 `python tools/tts.py --engine kokoro --model-dir <模型目錄>`（口音偏大陸普通話）。
 
 ## 資料來源
 
