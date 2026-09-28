@@ -503,10 +503,10 @@ let t=0, playing=false, cur=-1, last=performance.now();
 const $=id=>document.getElementById(id);
 const fmt=x=>`${Math.floor(x/60)}:${String(Math.floor(x%60)).padStart(2,'0')}`;
 function sceneAt(x){let k=0;for(let i=0;i<starts.length;i++) if(x>=starts[i]) k=i;return k}
-const vo=$('vo'); let audioOK=true, kiosk=false;
+const vo=$('vo'); let audioOK=true, audioBlocked=false, kiosk=false, wall0=0, from0=0;
 vo.addEventListener('error',()=>{audioOK=false});
-const withAudio=()=>audioOK&&!kiosk;
-function seekTime(x){if(seekTime.ready) $('startbtn').hidden=true; t=Math.max(0,Math.min(TOTAL,x));const k=sceneAt(t);if(k!==cur){cur=k;apply(k)} if(withAudio()) try{vo.currentTime=t}catch(e){} lineUI(true);ui()}
+const withAudio=()=>audioOK&&!audioBlocked&&!kiosk;
+function seekTime(x){if(seekTime.ready) $('startbtn').hidden=true; t=Math.max(0,Math.min(TOTAL,x)); wall0=performance.now(); from0=t;const k=sceneAt(t);if(k!==cur){cur=k;apply(k)} if(withAudio()) try{vo.currentTime=t}catch(e){} lineUI(true);ui()}
 function seek(k){k=Math.max(0,Math.min(S.length-1,k));cur=-1;seekTime(starts[k]);if(cur!==k){cur=k;apply(k)}}
 function lineUI(force){
   const s=S[cur]; if(!s) return; const tl=t-starts[cur], L=s.lines;
@@ -522,14 +522,19 @@ function lineUI(force){
 function ui(){$('fill').style.width=(t/TOTAL*100)+'%';$('time').textContent=`${fmt(t)} / ${fmt(TOTAL)}`;$('play').textContent=playing?'❚❚ 暫停':'▶ 播放'}
 function setPlay(p){
   playing=p; if(p && t>=TOTAL-0.05) seek(0);
-  if(p) $('startbtn').hidden=true;
-  if(withAudio()){ if(p){ try{vo.currentTime=t}catch(e){} vo.play().catch(()=>{}) } else vo.pause() }
+  if(p){ $('startbtn').hidden=true; wall0=performance.now(); from0=t; audioBlocked=false }
+  if(audioOK && !kiosk){
+    if(p){ try{vo.currentTime=t}catch(e){} vo.play().catch(()=>{ audioBlocked=true; wall0=performance.now(); from0=t }) }
+    else vo.pause()
+  }
   lineUI(); ui()
 }
 function tick(now){
   const dt=Math.min(.1,(now-last)/1000); last=now;
   if(playing){
-    if(withAudio() && !vo.paused && vo.readyState>=2 && Math.abs(vo.currentTime-t)<1.5) t=vo.currentTime; else t+=dt;
+    // the narration is the master clock; while it buffers, the animation waits for it
+    if(withAudio()) t = vo.ended ? t+dt : vo.currentTime;
+    else t = from0 + (now-wall0)/1000;
     t=Math.min(TOTAL,t); if(t>=TOTAL){ setPlay(false) }
     const k=sceneAt(t); if(k!==cur){cur=k;apply(k)} lineUI(); ui()}
   camStep(now); requestAnimationFrame(tick);
@@ -568,6 +573,7 @@ function start(){
   fit(); seek(0); seekTime.ready=true;
   requestAnimationFrame(tick);
   if(kiosk && !q.has('paused')) setTimeout(()=>setPlay(true),1200);
+  window.__startAt = () => { seek(0); setPlay(true); return Date.now() };
 }
 (document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]) : Promise.resolve()).then(start);
 </script>

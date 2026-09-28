@@ -19,7 +19,7 @@
 | `docs/分鏡表.md` | 每段的時間、段落與兩位角色的台詞 |
 | `narration/lines.json` | 台詞原稿（`A` = Allan 老師，`R` = 阿拉蕾） |
 | `assets/` | 角色頭像、旁白音檔 |
-| `src/`、`tools/` | 簡報範本、控制措施對照表，以及建置與語音合成工具 |
+| `src/`、`tools/` | 簡報範本、控制措施對照表，以及建置、語音合成與錄影工具 |
 
 ## 操作方式（互動版）
 
@@ -36,6 +36,12 @@
 pip install edge-tts soundfile imageio-ffmpeg numpy
 python tools/tts.py      # 產生 assets/narration.mp3、narration/timing.json（需連線 speech.platform.bing.com）
 python tools/build.py    # 重建 index.html，段落長度會跟著旁白調整
+```
+
+重新錄製影片（畫面依時間戳記對齊旁白，確保音字同步）：
+
+```bash
+node tools/record_video.js   # 需要 Playwright 與 imageio-ffmpeg
 ```
 
 無法連線時，可改用離線語音 `python tools/tts.py --engine kokoro --model-dir <模型目錄>`（口音偏大陸普通話）。
