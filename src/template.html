@@ -128,6 +128,34 @@ body{font-family:var(--sans);padding-inline:16px;padding-block:16px 28px;margin:
 #bar .fill{position:absolute;left:0;top:0;bottom:0;background:var(--navy)}
 #bar .tick{position:absolute;top:5px;width:2px;height:12px;border-radius:1px}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
+/* phone held upright: tall stage, map on top, card below, larger type */
+.portrait #viewport{aspect-ratio:auto;height:calc(100svh - 118px);min-height:460px}
+.portrait .legend{display:none}
+.portrait #hdr{height:124px;flex-wrap:wrap;align-content:center;gap:6px 10px;padding:8px 18px}
+.portrait #hdr .course b{font-size:29px}
+.portrait #hdr .lbl{font-size:13px}
+.portrait #hdr .lect b{font-size:27px}
+.portrait #hdr .lect small{font-size:12px}
+.portrait #hdr .sec{order:3;flex-basis:100%;text-align:center;margin:0;font-size:18px;padding:4px 14px;max-width:none}
+.portrait #card{left:12px;right:12px;width:auto;max-height:none;overflow:auto;padding:16px 20px 18px;border-radius:12px}
+.portrait #card h2{font-size:25px;margin:2px 0 6px}
+.portrait #card .body{font-size:19px;line-height:1.5}
+.portrait .eb{font-size:13px}
+.portrait .note{font-size:17px;margin-top:8px}
+.portrait .caps2{font-size:17px}
+.portrait .nums b{font-size:30px}
+.portrait .tt h1{font-size:34px;margin:2px 0}
+.portrait .tt .sub{font-size:17px;margin-bottom:10px}
+.portrait .tt .who{grid-template-columns:1fr;padding-top:12px}
+.portrait .tt .who .nm b{font-size:26px}
+.portrait .tt .who ul{font-size:16px}
+.portrait #cap{height:196px;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px;padding:0 16px 0 186px}
+.portrait #cap p{font-size:21px;line-height:1.4}
+.portrait #cap .no{display:none}
+.portrait #allan{left:10px;bottom:12px;width:88px;height:136px}
+.portrait #arale{left:100px;bottom:12px;width:80px;height:94px}
+.portrait .av span{font-size:11px;padding:1px 7px}
+.portrait #startbtn{font-size:22px;padding:10px 26px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 </style>
 
@@ -473,18 +501,23 @@ function apply(k){
   card.classList.add('off');
   clearTimeout(apply.t);
   apply.t=setTimeout(()=>{
-    card.className=(s.card.pos==='center'?'center ':'')+(s.red?'red ':'')+'off';
+    card.className=(s.card.pos==='center'&&!PORT?'center ':'')+(s.red?'red ':'')+'off';
     card.innerHTML = s.card.pos==='center' ? s.card.html : `<div class="eb">${s.card.eb}</div><h2>${s.card.title}</h2><div class="body">${s.card.html}</div>`;
     requestAnimationFrame(()=>card.classList.remove('off'));
   }, card.innerHTML?260:0);
-  // camera
+  frame(k);
+}
+let SW=1600, SH=900, PORT=false, MAPR=null;
+function frame(k,instant){
+  const st=stateOf(k), s=S[k];
   const ids=st.focus.filter(id=>N[id]);
   let x1=1e9,y1=1e9,x2=-1e9,y2=-1e9;
   ids.forEach(id=>{const b=box(N[id]);x1=Math.min(x1,b.x);y1=Math.min(y1,b.y);x2=Math.max(x2,b.x+b.w);y2=Math.max(y2,b.y+b.h)});
   const pad=40; x1-=pad;y1-=pad;x2+=pad;y2+=pad;
-  const R = s.card.pos==='center' ? {x:40,y:100,w:1520,h:640} : {x:30,y:104,w:1000,h:672};
+  const R = PORT ? MAPR : s.card.pos==='center' ? {x:40,y:100,w:1520,h:640} : {x:30,y:104,w:1000,h:672};
   const sc=Math.min(R.w/(x2-x1),R.h/(y2-y1),1.3);
   camTo(sc,(x1+x2)/2,(y1+y2)/2,R);
+  if(instant){ camT0=-1e9 }
 }
 /* camera */
 let cam={s:.3,cx:1500,cy:900,rx:800,ry:460}, camFrom=null, camTarget=null, camT0=0;
@@ -549,9 +582,22 @@ function ticks(){
     d.style.background=s.red?'#EC5A53':(s.sec.startsWith('附錄')?'#5C8FD6':'#1565C0');d.title=s.sec;bar.appendChild(d)});
 }
 function fit(){
-  const vp=$('viewport'), k=Math.min(vp.clientWidth/1600, vp.clientHeight/900);
-  const st=$('stage'); st.style.transform=`scale(${k})`;
-  st.style.left=((vp.clientWidth-1600*k)/2)+'px'; st.style.top=((vp.clientHeight-900*k)/2)+'px';
+  const port = !kiosk && innerWidth < innerHeight && innerWidth <= 900;
+  if(port!==PORT){ PORT=port; document.documentElement.classList.toggle('portrait',port) }
+  const vp=$('viewport'), st=$('stage'), map=$('map'), card=$('card'), sb=$('startbtn');
+  if(PORT){ SW=640; SH=Math.max(900,Math.round(640*vp.clientHeight/vp.clientWidth)) } else { SW=1600; SH=900 }
+  st.style.width=SW+'px'; st.style.height=SH+'px';
+  map.setAttribute('viewBox',`0 0 ${SW} ${SH}`); map.style.width=SW+'px'; map.style.height=SH+'px';
+  if(PORT){
+    const top=124, capH=196, mapH=Math.round((SH-top-capH)*0.46);
+    MAPR={x:14,y:top+8,w:SW-28,h:mapH-16};
+    card.style.top=(top+mapH)+'px'; card.style.bottom=(capH+10)+'px';
+    sb.style.top=(top+mapH-66)+'px';
+  } else { card.style.top=card.style.bottom=sb.style.top='' }
+  const k=Math.min(vp.clientWidth/SW, vp.clientHeight/SH);
+  st.style.transform=`scale(${k})`;
+  st.style.left=((vp.clientWidth-SW*k)/2)+'px'; st.style.top=((vp.clientHeight-SH*k)/2)+'px';
+  if(cur>=0){ frame(cur,true); if(fit.card!==PORT){ fit.card=PORT; apply(cur) } }
 }
 $('play').onclick=()=>setPlay(!playing);
 $('stage').onclick=e=>{ if(!e.target.closest('a,button')) setPlay(!playing) };
