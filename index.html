@@ -117,6 +117,10 @@ body{font-family:var(--sans);padding-inline:16px;padding-block:16px 28px;margin:
 .nd.hl text{font-weight:700}
 @media (prefers-reduced-motion:reduce){.nd,.lk,#card,.av{transition-duration:.01s!important}.av img,.av::before{animation:none!important}}
 .kiosk body{padding:0}.kiosk .player{max-width:none;gap:0}.kiosk .ctrl,.kiosk .legend{display:none}.kiosk #viewport{border-radius:0;box-shadow:none;height:100vh;aspect-ratio:auto}.kiosk #stage{cursor:default}
+#tc{display:none}
+.kiosk.rec #viewport{height:900px}
+.kiosk.rec #tc{display:flex;position:fixed;left:0;top:900px;width:1600px;height:16px}
+#tc i{flex:1;background:#000}#tc i.on{background:#fff}
 /* controls */
 .ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .ctrl button{font:inherit;font-size:14px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:6px;padding:6px 12px;cursor:pointer}
@@ -577,6 +581,11 @@ function start(){
   build(); render(); timeline(); ticks(); fit();
   const q = new URLSearchParams(location.search);
   if(q.has('kiosk')){ kiosk=true; document.documentElement.classList.add('kiosk'); $('startbtn').hidden=true }
+  if(q.has('rec')){ // recording: stamp the animation time on every frame as a 24-bit strip below the stage
+    document.documentElement.classList.add('rec');
+    const tc=document.createElement('div'); tc.id='tc'; tc.innerHTML='<i></i>'.repeat(24); document.body.appendChild(tc);
+    const bits=[...tc.children]; (function stamp(){ const v=Math.round(t*1000); bits.forEach((b,i)=>b.className=(v>>(23-i))&1?'on':''); requestAnimationFrame(stamp) })();
+  }
   fit(); seek(0); seekTime.ready=true;
   requestAnimationFrame(tick);
   if(kiosk && !q.has('paused')) setTimeout(()=>setPlay(true),1200);
