@@ -43,7 +43,7 @@ body{font-family:var(--sans);padding-inline:16px;padding-block:16px 28px;margin:
 #allan img{position:absolute;inset:0;transition:opacity .35s ease}
 #allan img.off{opacity:0}
 #allan span{z-index:1}
-#allan.talk img{animation:talk 2.4s ease-in-out infinite}
+#allan.talk img{animation:talk 3.2s ease-in-out infinite}
 #arale{left:186px;bottom:12px;width:126px;height:160px;transform:translateY(200px) rotate(-12deg)}
 #arale.show{transform:none}
 #arale span{background:#E0528A}
@@ -180,7 +180,7 @@ body{font-family:var(--sans);padding-inline:16px;padding-block:16px 28px;margin:
       </header>
       <aside id="card" class="off"></aside>
       <footer id="cap"><span class="who" id="who">Allan 老師</span><p id="captext"></p><span class="no" id="no">01 / 33</span></footer>
-      <div id="allan" class="av"><img id="allanImg" src="assets/chars/allan_smile.jpg" alt="羅宇倫 Allan Lo 老師"><img id="allanImg2" class="off" src="assets/chars/allan_smile.jpg" alt=""><span>Allan 老師</span></div>
+      <div id="allan" class="av"><img id="allanImg" src="assets/chars/allan_say0.jpg" data-cur="say0" alt="羅宇倫 Allan Lo 老師"><img id="allanImg2" class="off" src="assets/chars/allan_say0.jpg" alt=""><span>Allan 老師</span></div>
       <div id="arale" class="av"><img id="araleImg" src="assets/chars/arale_laugh.jpg" alt="助教阿拉蕾"><span>助教 阿拉蕾</span></div>
       <button id="startbtn">▶ 開始播放（有聲）</button>
       <audio id="vo" src="assets/narration.mp3" preload="auto"></audio>
@@ -203,6 +203,7 @@ body{font-family:var(--sans);padding-inline:16px;padding-block:16px 28px;margin:
 const CTRL = /*CTRL*/;
 const CAPMAP = /*CAPS*/;
 const TIMING = /*TIMING*/;
+const MOUTH = /*MOUTH*/;  // Allan's mouth per 0.06s from the narration volume (tools/mouth.py)
 const CAPS = [
   ['01','Governance','治理','R'],['02','Human Resource security','人資安全','L'],['03','Information protection','資訊保護','R'],
   ['04','Asset management','資產管理','L'],['05','Identity and access management','存取管理','R'],['06','Secure configuration','保全組態','L'],
@@ -557,21 +558,28 @@ function seek(k){k=Math.max(0,Math.min(S.length-1,k));cur=-1;seekTime(starts[k])
 /* expressions: talking alternates a closed- and open-mouth face; some lines get their own expression */
 const FACES={A:['smile','laugh','point','scratch','surprised','talk','think','wink'],R:['laugh','think','surprised','confused','talk','cry','thumb','cheer']};
 FACES.A.concat(FACES.R).forEach((f,i)=>{const im=new Image(); im.src=`assets/chars/${i<8?'allan':'arale'}_${f}.jpg`});
-const CUE={A:[[/核心|最實用|第一個|最後一個/,'point'],[/哈哈|答對了|說得很好|謝謝/,'laugh'],[/別擔心/,'wink'],[/沒錯/,'laugh']],
+['say0','say1','say2'].forEach(f=>{const im=new Image(); im.src=`assets/chars/allan_${f}.jpg`});
+// Allan uses only the three aligned talking frames (other drawings are at a different scale)
+const CUE={A:[],
            R:[[/哇|好多/,'surprised'],[/數數看/,'think'],[/知己知彼|好厲害/,'thumb'],[/耶|加油|馬上通報/,'cheer'],[/掰掰|下次見/,'laugh']]};
-const IDLE={A:'smile',R:'laugh'}, TALK={A:['smile','smile'],R:['laugh','talk']};
+const IDLE={A:'say0',R:'laugh'}, TALK={A:null,R:['laugh','talk']};
 function face(who,el,f){
   const src=`assets/chars/${who==='A'?'allan':'arale'}_${f}.jpg`;
   if(el.dataset.f===f) return; el.dataset.f=f;
   if(who!=='A'){ el.src=src; return }
+  const a0=$('allanImg'), vis=a0.classList.contains('off')?$('allanImg2'):a0;
+  if(/^say/.test(f) && /^say/.test(vis.dataset.cur||'')){ vis.src=src; vis.dataset.cur=f; return }   // mouth frames: instant swap
+
   // Allan: crossfade between two stacked layers
   const a=$('allanImg'), b=$('allanImg2'), [on,off]=a.classList.contains('off')?[b,a]:[a,b];
-  off.src=src; off.classList.remove('off'); on.classList.add('off');
+  off.src=src; off.dataset.cur=f; off.classList.remove('off'); on.classList.add('off');
 }
 function faceFor(who,l,speaking){
   if(!speaking||l.who!==who) return IDLE[who];
   const c=(CUE[who].find(([re])=>re.test(l.text))||[])[1];
-  return c || TALK[who][Math.floor(t*5)%2];
+  if(c) return c;
+  if(who==='A') return 'say'+(MOUTH[Math.floor(t/0.06)]||'0');   // lip sync from narration volume
+  return TALK[who][Math.floor(t*5)%2];
 }
 function lineUI(force){
   const s=S[cur]; if(!s) return; const tl=t-starts[cur], L=s.lines;

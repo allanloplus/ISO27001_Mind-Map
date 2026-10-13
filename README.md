@@ -35,6 +35,7 @@
 ```bash
 pip install edge-tts soundfile imageio-ffmpeg numpy
 python tools/tts.py      # 產生 assets/narration.mp3、narration/timing.json（需連線 speech.platform.bing.com）
+python tools/mouth.py    # 依旁白音量算出 Allan 老師的口型（narration/mouth.txt）
 python tools/build.py    # 重建 index.html，段落長度會跟著旁白調整
 ```
 

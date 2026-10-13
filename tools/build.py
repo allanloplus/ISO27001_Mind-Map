@@ -11,9 +11,12 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 def body():
     m = json.loads((ROOT / "src/control_map.json").read_text(encoding="utf-8"))
     timing = json.loads((ROOT / "narration/timing.json").read_text(encoding="utf-8"))
+    mf = ROOT / "narration/mouth.txt"
+    mouth = mf.read_text(encoding="utf-8").strip() if mf.exists() else ""
     j = lambda o: json.dumps(o, ensure_ascii=False, separators=(",", ":"))
     return ((ROOT / "src/template.html").read_text(encoding="utf-8")
-            .replace("/*CTRL*/", j(m["ctrl"])).replace("/*CAPS*/", j(m["caps"])).replace("/*TIMING*/", j(timing)))
+            .replace("/*CTRL*/", j(m["ctrl"])).replace("/*CAPS*/", j(m["caps"])).replace("/*TIMING*/", j(timing))
+            .replace("/*MOUTH*/", j(mouth)))
 
 
 def main(fragment):
