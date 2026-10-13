@@ -45,13 +45,16 @@ body{font-family:var(--sans);padding-inline:16px;padding-block:16px 28px;margin:
 .av::before{content:"";position:absolute;inset:-6px;border-radius:16px;border:3px solid #FFB2A6;opacity:0}
 .av.talk::before{animation:ring 1.1s ease-out infinite}
 #allan{left:22px;bottom:12px;width:150px;height:190px}
-#allan.talk img{animation:talk 1.4s ease-in-out infinite}
+#allan img{position:absolute;inset:0;transition:opacity .35s ease}
+#allan img.off{opacity:0}
+#allan span{z-index:1}
+#allan.talk img{animation:talk 2.4s ease-in-out infinite}
 #arale{left:186px;bottom:12px;width:126px;height:160px;transform:translateY(200px) rotate(-12deg)}
 #arale.show{transform:none}
 #arale span{background:#E0528A}
 #arale::before{border-color:#F7A3C4}
 #arale.talk img{animation:hop .6s ease-in-out infinite alternate}
-@keyframes talk{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-4px) rotate(-1deg)}70%{transform:translateY(-1px) rotate(.8deg)}}
+@keyframes talk{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-2px) rotate(-.6deg)}50%{transform:translateY(0) rotate(0)}75%{transform:translateY(-1.5px) rotate(.5deg)}}
 @keyframes hop{from{transform:translateY(0) rotate(-4deg)}to{transform:translateY(-9px) rotate(4deg)}}
 @keyframes ring{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(1.1)}}
 #startbtn{position:absolute;left:50%;top:694px;transform:translateX(-50%);z-index:7;font:inherit;font-size:24px;font-weight:700;color:#fff;background:var(--navy);border:0;border-radius:999px;padding:12px 34px;cursor:pointer;box-shadow:0 8px 24px rgba(14,42,71,.3)}
@@ -184,7 +187,7 @@ body{font-family:var(--sans);padding-inline:16px;padding-block:16px 28px;margin:
       </header>
       <aside id="card" class="off"></aside>
       <footer id="cap"><span class="who" id="who">Allan 老師</span><p id="captext"></p><span class="no" id="no">01 / 33</span></footer>
-      <div id="allan" class="av"><img id="allanImg" src="assets/chars/allan_smile.jpg" alt="羅宇倫 Allan Lo 老師"><span>Allan 老師</span></div>
+      <div id="allan" class="av"><img id="allanImg" src="assets/chars/allan_smile.jpg" alt="羅宇倫 Allan Lo 老師"><img id="allanImg2" class="off" src="assets/chars/allan_smile.jpg" alt=""><span>Allan 老師</span></div>
       <div id="arale" class="av"><img id="araleImg" src="assets/chars/arale_laugh.jpg" alt="助教阿拉蕾"><span>助教 阿拉蕾</span></div>
       <button id="startbtn">▶ 開始播放（有聲）</button>
       <audio id="vo" src="assets/narration.mp3" preload="auto"></audio>
@@ -563,8 +566,15 @@ const FACES={A:['smile','laugh','point','scratch','surprised','talk','think','wi
 FACES.A.concat(FACES.R).forEach((f,i)=>{const im=new Image(); im.src=`assets/chars/${i<8?'allan':'arale'}_${f}.jpg`});
 const CUE={A:[[/核心|最實用|第一個|最後一個/,'point'],[/哈哈|答對了|說得很好|謝謝/,'laugh'],[/別擔心/,'wink'],[/沒錯/,'laugh']],
            R:[[/哇|好多/,'surprised'],[/數數看/,'think'],[/知己知彼|好厲害/,'thumb'],[/耶|加油|馬上通報/,'cheer'],[/掰掰|下次見/,'laugh']]};
-const IDLE={A:'smile',R:'laugh'}, TALK={A:['smile','talk'],R:['laugh','talk']};
-function face(who,el,f){ const src=`assets/chars/${who==='A'?'allan':'arale'}_${f}.jpg`; if(el.dataset.f!==f){ el.dataset.f=f; el.src=src } }
+const IDLE={A:'smile',R:'laugh'}, TALK={A:['smile','smile'],R:['laugh','talk']};
+function face(who,el,f){
+  const src=`assets/chars/${who==='A'?'allan':'arale'}_${f}.jpg`;
+  if(el.dataset.f===f) return; el.dataset.f=f;
+  if(who!=='A'){ el.src=src; return }
+  // Allan: crossfade between two stacked layers
+  const a=$('allanImg'), b=$('allanImg2'), [on,off]=a.classList.contains('off')?[b,a]:[a,b];
+  off.src=src; off.classList.remove('off'); on.classList.add('off');
+}
 function faceFor(who,l,speaking){
   if(!speaking||l.who!==who) return IDLE[who];
   const c=(CUE[who].find(([re])=>re.test(l.text))||[])[1];
